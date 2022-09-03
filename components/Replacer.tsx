@@ -12,58 +12,75 @@ const Replacer = function () {
   const render = function () {
     const uuidLength = 36;
     const matches: number[] = [];
+    const newLineIndex: number[] = [];
 
     for (let i = 0; i < currentString.length - uuidLength + 1; i++) {
-      const asdf = currentString.substring(i, i + uuidLength).match(regex);
-      if (asdf) {
+      if (currentString.substring(i, i + uuidLength).match(regex)) {
         matches.push(i);
+      }
+      if (currentString.charCodeAt(i) === 10) {
+        newLineIndex.push(i);
       }
     }
 
     const renderedContent = [];
-    if (matches[0] !== 0) {
-      renderedContent.push(
-        <span>{currentString.substring(0, matches[0])}</span>
-      );
-    }
-    for (let i = 0; i < matches.length; i++) {
-      renderedContent.push(
-        <span className="bg-green-600">
-          {currentString.substring(matches[i], matches[i] + uuidLength)}
-        </span>
-      );
+    let current = 0;
+    let a = 0;
+    let b = 0;
+    while (a < matches.length || b < newLineIndex.length) {
+      const nextMatch =
+        a < matches.length ? matches[a] : Number.MAX_SAFE_INTEGER;
+      const nextNewLine =
+        b < newLineIndex.length ? newLineIndex[b] : Number.MAX_SAFE_INTEGER;
+      const nextSignificant = Math.min(nextMatch, nextNewLine);
 
-      if (matches[i] + uuidLength == currentString.length) break;
-      if (matches[i] + uuidLength < currentString.length) {
-        let endIndex = -1;
-        if (i + 1 < matches.length) {
-          endIndex = matches[i + 1];
-        } else {
-          endIndex = currentString.length;
-        }
+      if (current !== nextSignificant) {
         renderedContent.push(
-          <span>
-            {currentString.substring(matches[i] + uuidLength, endIndex)}
+          <span>{currentString.substring(current, nextSignificant)}</span>
+        );
+        current = nextSignificant;
+        continue;
+      }
+
+      if (nextMatch === current) {
+        renderedContent.push(
+          <span className="bg-green-400">
+            {currentString.substring(current, current + 36)}
           </span>
         );
+        a++;
+        current += 36;
+      } else {
+        renderedContent.push(<p />);
+        b++;
+        current += 1;
       }
     }
-    return <div>{renderedContent}</div>;
+
+    if (current !== currentString.length) {
+      renderedContent.push(
+        <span>{currentString.substring(current, currentString.length)}</span>
+      );
+    }
+
+    return renderedContent;
   };
 
   return (
-    <div className="w-1/2">
+    <div className="w-5/6">
       <div>
         <textarea
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-96 border-black border p-2"
+          className="w-full h-40 border-black border p-2 text-sm"
           placeholder="Enter your sql contents here"
         />
       </div>
 
       <div>
         Rendered Div
-        <div className="w-full h-96 border-black border p-2">{render()}</div>
+        <div className="w-full h-96 border-black border p-2 text-sm ">
+          {render()}
+        </div>
       </div>
     </div>
   );
